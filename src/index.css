@@ -381,6 +381,62 @@ svg {
 .scene-render {
   height: 100%;
 }
+.crystal-panel {
+  background-image: none;
+  border-color: transparent;
+  isolation: isolate;
+}
+.crystal-panel .scene-caption {
+  pointer-events: none;
+}
+.crystal-control {
+  position: absolute;
+  inset: 39px 0 42px;
+  z-index: 3;
+  background: transparent;
+  border: 0;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.crystal-control:active {
+  cursor: grabbing;
+}
+.crystal-control:disabled {
+  cursor: default;
+}
+.crystal-panel .scene-bottom {
+  justify-content: center;
+  min-height: 24px;
+  padding-right: 28px;
+}
+.crystal-instruction {
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: #d0c8bb;
+}
+.crystal-instruction::after {
+  content: "";
+  position: absolute;
+  width: 35px;
+  height: 1px;
+  bottom: -5px;
+  left: calc(50% - 31.5px);
+  background: #b11226;
+  transform: scaleX(0.35);
+  transition: transform 0.7s ease;
+}
+.is-held .crystal-instruction::after {
+  transform: scaleX(1);
+}
+.scene-bottom .crystal-pause {
+  position: absolute;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+}
 .static-structure {
   height: 100%;
   width: 100%;
@@ -1678,6 +1734,10 @@ svg {
     left: 10px;
     right: 10px;
     font-size: 5px;
+  }
+  .crystal-instruction {
+    font-size: 7px;
+    letter-spacing: 0.1em;
   }
   .static-structure {
     padding: 23px 0;

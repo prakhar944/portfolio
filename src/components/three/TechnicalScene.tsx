@@ -1,258 +1,249 @@
-import { useMemo, useRef } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { Edges } from "@react-three/drei";
-import {
-  DynamicDrawUsage,
-  Group,
-  InstancedMesh,
-  MathUtils,
-  Mesh,
-  MeshStandardMaterial,
-  Object3D,
-} from "three";
+import { useEffect, useMemo, useRef } from "react";
+import type { RefObject } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Environment, Lightformer } from "@react-three/drei";
+import { DoubleSide, Group, MathUtils, MeshPhysicalMaterial } from "three";
+import { createCrystalGeometry } from "./crystalGeometry";
 
-const corners = [
-  [-1.07, -1.07],
-  [1.07, -1.07],
-  [1.07, 1.07],
-  [-1.07, 1.07],
-] as const;
-const levels = [-1, 0, 1] as const;
-const packetCount = 16;
+export type CrystalInput = { x: number; y: number };
+type CrystalSceneProps = {
+  animated: boolean;
+  held: boolean;
+  reducedMotion: boolean;
+  lowPower: boolean;
+  interaction: RefObject<CrystalInput>;
+  onUnavailable: () => void;
+};
 
-// Static circuit geometry is created once. Frame updates reuse a single matrix.
-const circuitPositions = new Float32Array(
-  corners.flatMap(([x, z], index) => {
-    const [nextX, nextZ] = corners[(index + 1) % corners.length];
-    return [
-      x,
-      0.09,
-      z,
-      nextX,
-      0.09,
-      nextZ,
-      x,
-      0.09,
-      z,
-      x * 0.52,
-      0.09,
-      z,
-      x * 0.52,
-      0.09,
-      z,
-      x * 0.52,
-      0.09,
-      z * 0.52,
-      x * 0.52,
-      0.09,
-      z * 0.52,
-      0,
-      0.09,
-      z * 0.52,
-    ];
-  }),
-);
-const framePositions = new Float32Array(
-  corners.flatMap(([x, z]) => [x, -1.12, z, x, 1.28, z]),
-);
+const facetShader = /* glsl */ `
+  uniform float uOpen;
+  uniform float uTime;
+  attribute vec3 aCentroid;
+  attribute vec3 aAxis;
+  attribute float aPhase;
 
-function CircuitLayer({ level }: { level: number }) {
-  const accent = level === 0;
-  return (
-    <group position={[0, level * 0.92, 0]}>
-      <mesh>
-        <boxGeometry args={[2.5, 0.1, 2.5]} />
-        <meshStandardMaterial
-          color={accent ? "#791422" : "#37332e"}
-          metalness={0.65}
-          roughness={0.35}
-          transparent
-          opacity={0.72}
-          depthWrite={false}
-        />
-        <Edges color={accent ? "#d94352" : "#c8b99d"} />
-      </mesh>
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[circuitPositions, 3]}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial
-          color={accent ? "#de6070" : "#b5a589"}
-          transparent
-          opacity={0.65}
-        />
-      </lineSegments>
-      <mesh position={[0, 0.11, 0]}>
-        <boxGeometry args={[0.66, 0.11, 0.66]} />
-        <meshStandardMaterial
-          color={accent ? "#b11226" : "#897a63"}
-          metalness={0.7}
-          roughness={0.3}
-        />
-        <Edges color={accent ? "#ee6975" : "#dac9a8"} />
-      </mesh>
-      {corners.map(([x, z], index) => (
-        <mesh key={index} position={[x, 0.1, z]}>
-          <boxGeometry args={[0.1, 0.08, 0.1]} />
-          <meshBasicMaterial color={accent ? "#d94352" : "#d5c5a8"} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
+  float facetOpening() {
+    return smoothstep(0.0, 1.0, clamp(uOpen * 1.3 - aPhase * 0.3, 0.0, 1.0));
+  }
 
-function Structure({ animated }: { animated: boolean }) {
-  const structure = useRef<Group>(null);
-  const layers = useRef<Group>(null);
-  const core = useRef<Group>(null);
-  const coreMaterial = useRef<MeshStandardMaterial>(null);
-  const scanner = useRef<Mesh>(null);
-  const packets = useRef<InstancedMesh>(null);
+  mat3 facetRotation(float opening) {
+    float angle = opening * (0.25 + aPhase * 0.8);
+    float s = sin(angle);
+    float c = cos(angle);
+    float v = 1.0 - c;
+    vec3 a = aAxis;
+    return mat3(
+      a.x * a.x * v + c,       a.y * a.x * v + a.z * s, a.z * a.x * v - a.y * s,
+      a.x * a.y * v - a.z * s, a.y * a.y * v + c,       a.z * a.y * v + a.x * s,
+      a.x * a.z * v + a.y * s, a.y * a.z * v - a.x * s, a.z * a.z * v + c
+    );
+  }
+`;
+
+function Crystal({
+  animated,
+  held,
+  reducedMotion,
+  lowPower,
+  interaction,
+  onUnavailable,
+}: CrystalSceneProps) {
+  const sculpture = useRef<Group>(null);
   const time = useRef(0);
-  const initialized = useRef(false);
-  const transform = useMemo(() => new Object3D(), []);
+  const spin = useRef(0.35);
+  const geometry = useMemo(createCrystalGeometry, []);
+  const uniforms = useMemo(
+    () => ({ uOpen: { value: 0 }, uTime: { value: 0 } }),
+    [],
+  );
+  const { invalidate, gl, viewport } = useThree();
+  const material = useMemo(() => {
+    const glass = new MeshPhysicalMaterial({
+      color: "#a3a6ae",
+      metalness: lowPower ? 1 : 0.16,
+      roughness: 0.065,
+      transmission: lowPower ? 0 : 0.72,
+      thickness: 1.25,
+      ior: 1.85,
+      dispersion: lowPower ? 0 : 0.06,
+      clearcoat: 1,
+      clearcoatRoughness: 0.04,
+      envMapIntensity: 1.65,
+      attenuationColor: "#777c88",
+      attenuationDistance: 0.75,
+      side: DoubleSide,
+      flatShading: true,
+      vertexColors: true,
+    });
+    glass.onBeforeCompile = (shader) => {
+      Object.assign(shader.uniforms, uniforms);
+      shader.vertexShader = facetShader + shader.vertexShader;
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <beginnormal_vertex>",
+        "#include <beginnormal_vertex>\nobjectNormal = facetRotation(facetOpening()) * objectNormal;",
+      );
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        /* glsl */ `
+          #include <begin_vertex>
+          float opening = facetOpening();
+          vec3 radial = normalize(vec3(aCentroid.x, aCentroid.y * 0.4, aCentroid.z));
+          transformed = facetRotation(opening) * (position - aCentroid)
+            * (1.0 - opening * 0.04) + aCentroid;
+          transformed += radial * opening * (0.2 + aPhase * 0.28);
+          transformed.y += sin(aPhase * 6.2831 + uTime * 0.7) * opening * 0.045;
+        `,
+      );
+    };
+    glass.customProgramCacheKey = () => "portfolio-faceted-crystal-v1";
+    return glass;
+  }, [lowPower, uniforms]);
 
-  useFrame(({ pointer }, delta) => {
-    // Pausing freezes every moving part; resuming never jumps ahead in time.
-    if (!animated && initialized.current) return;
+  useEffect(() => {
+    invalidate();
+  }, [held, reducedMotion, invalidate]);
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      onUnavailable();
+    };
+    canvas.addEventListener("webglcontextlost", handleContextLost);
+    return () =>
+      canvas.removeEventListener("webglcontextlost", handleContextLost);
+  }, [gl, onUnavailable]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  useEffect(() => () => material.dispose(), [material]);
+
+  useFrame((_, delta) => {
+    if (!sculpture.current) return;
+    if (reducedMotion) {
+      uniforms.uOpen.value = held ? 1 : 0;
+      return;
+    }
+    if (!animated) return;
+    // Local time preserves the pose when paused or when the tab is hidden.
     const step = Math.min(delta, 0.05);
-    if (animated) time.current += step;
+    time.current += step;
     const t = time.current;
-
-    if (structure.current) {
-      structure.current.rotation.y = MathUtils.damp(
-        structure.current.rotation.y,
-        0.65 + t * 0.07 + Math.sin(t * 0.25) * 0.13 + pointer.x * 0.22,
-        3,
-        step,
-      );
-      structure.current.rotation.x = MathUtils.damp(
-        structure.current.rotation.x,
-        0.24 + Math.sin(t * 0.3) * 0.035 - pointer.y * 0.13,
-        3,
-        step,
-      );
-      structure.current.position.y = Math.sin(t * 0.65) * 0.055;
-    }
-
-    if (layers.current) {
-      layers.current.children.forEach((layer, index) => {
-        layer.position.y = levels[index] * (0.92 + Math.sin(t * 0.6) * 0.075);
-      });
-    }
-    if (core.current) {
-      core.current.rotation.y = -t * 0.45;
-      core.current.rotation.z = Math.PI / 4 + Math.sin(t * 0.75) * 0.1;
-    }
-    if (coreMaterial.current) {
-      coreMaterial.current.emissiveIntensity =
-        0.22 + (Math.sin(t * 1.6) + 1) * 0.12;
-    }
-    if (scanner.current) {
-      scanner.current.position.y = Math.sin(t * 0.55) * 1.18;
-    }
-
-    if (packets.current) {
-      for (let index = 0; index < packetCount; index++) {
-        const progress = (t * 0.13 + index / packetCount) % 1;
-        if (index < 8) {
-          // Ascending / descending data along the four corner connections.
-          const [x, z] = corners[index % corners.length];
-          const direction = index % 2 === 0 ? progress : 1 - progress;
-          transform.position.set(x, -1.08 + direction * 2.36, z);
-          transform.scale.set(0.05, 0.15, 0.05);
-        } else {
-          // Packets trace the square perimeter of each circuit layer.
-          const path = progress * 4;
-          const edge = Math.floor(path);
-          const [startX, startZ] = corners[edge];
-          const [endX, endZ] = corners[(edge + 1) % corners.length];
-          const level = levels[index % levels.length];
-          transform.position.set(
-            MathUtils.lerp(startX, endX, path - edge),
-            level * (0.92 + Math.sin(t * 0.6) * 0.075) + 0.11,
-            MathUtils.lerp(startZ, endZ, path - edge),
-          );
-          transform.scale.set(0.075, 0.035, 0.075);
-        }
-        transform.updateMatrix();
-        packets.current.setMatrixAt(index, transform.matrix);
-      }
-      packets.current.instanceMatrix.needsUpdate = true;
-    }
-    initialized.current = true;
+    uniforms.uTime.value = t;
+    uniforms.uOpen.value = MathUtils.damp(
+      uniforms.uOpen.value,
+      held ? 1 : 0,
+      held ? 3.8 : 5.5,
+      step,
+    );
+    spin.current += step * (0.12 + uniforms.uOpen.value * 0.24);
+    sculpture.current.rotation.y = MathUtils.damp(
+      sculpture.current.rotation.y,
+      spin.current + interaction.current.x * 0.48,
+      3.5,
+      step,
+    );
+    sculpture.current.rotation.x = MathUtils.damp(
+      sculpture.current.rotation.x,
+      -0.08 - interaction.current.y * 0.23,
+      3.5,
+      step,
+    );
+    sculpture.current.rotation.z = MathUtils.damp(
+      sculpture.current.rotation.z,
+      Math.sin(t * 0.35) * 0.035 + interaction.current.x * 0.06,
+      3.5,
+      step,
+    );
+    sculpture.current.position.y = Math.sin(t * 0.8) * 0.055;
   });
 
   return (
-    <group ref={structure} rotation={[0.24, 0.65, -0.08]}>
-      <group ref={layers}>
-        {levels.map((level) => (
-          <CircuitLayer key={level} level={level} />
-        ))}
-      </group>
-      <lineSegments>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            args={[framePositions, 3]}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color="#a6977e" transparent opacity={0.5} />
-      </lineSegments>
-      <group ref={core} position={[0, 1.5, 0]} rotation={[0, 0, Math.PI / 4]}>
-        <mesh>
-          <boxGeometry args={[0.38, 0.38, 0.38]} />
-          <meshStandardMaterial
-            ref={coreMaterial}
-            color="#b11226"
-            emissive="#b11226"
-            emissiveIntensity={0.34}
-            metalness={0.5}
-            roughness={0.25}
-          />
-          <Edges color="#ef8a8e" />
-        </mesh>
-        <mesh rotation={[Math.PI / 4, Math.PI / 4, 0]}>
-          <boxGeometry args={[0.67, 0.67, 0.67]} />
-          <meshBasicMaterial visible={false} />
-          <Edges color="#b9a98d" transparent opacity={0.7} />
-        </mesh>
-      </group>
-      <mesh ref={scanner} position={[0, 0, 0]}>
-        <boxGeometry args={[2.74, 0.008, 2.74]} />
-        <meshBasicMaterial visible={false} />
-        <Edges color="#b11226" transparent opacity={0.45} />
-      </mesh>
-      <instancedMesh
-        ref={packets}
-        args={[undefined, undefined, packetCount]}
+    <group
+      ref={sculpture}
+      rotation={[-0.08, 0.35, 0]}
+      scale={Math.min(1, viewport.width / 3.05)}
+    >
+      <mesh
+        geometry={geometry}
+        material={material}
         frustumCulled={false}
-        onUpdate={(mesh) => mesh.instanceMatrix.setUsage(DynamicDrawUsage)}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#efb1a1" toneMapped={false} />
-      </instancedMesh>
+        dispose={null}
+      />
     </group>
   );
 }
 
-export default function TechnicalScene({ animated }: { animated: boolean }) {
+export default function TechnicalScene(props: CrystalSceneProps) {
   return (
     <Canvas
-      camera={{ position: [4.2, 3.1, 7.1], fov: 37 }}
-      dpr={[1, 1.4]}
-      frameloop={animated ? "always" : "demand"}
-      gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}
+      camera={{ position: [0, 0.13, 6.3], fov: 36 }}
+      dpr={props.lowPower ? 1 : [1, 1.5]}
+      frameloop={props.animated ? "always" : "demand"}
+      gl={{
+        antialias: !props.lowPower,
+        alpha: true,
+        powerPreference: "low-power",
+      }}
+      onCreated={({ gl }) => {
+        gl.debug.onShaderError = (context, program) => {
+          console.error(
+            "Crystal shader could not compile:",
+            context.getProgramInfoLog(program),
+          );
+          props.onUnavailable();
+        };
+      }}
       aria-hidden="true"
     >
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[4, 7, 4]} intensity={3} />
-      <directionalLight position={[-4, 0, 1]} color="#b11226" intensity={2} />
-      <directionalLight position={[0, 2, -5]} color="#e8ddc7" intensity={1.5} />
-      <Structure animated={animated} />
+      <ambientLight intensity={0.18} />
+      <directionalLight position={[3, 5, 4]} intensity={1.5} color="#f1e8d8" />
+      <directionalLight
+        position={[-3, -1, 2]}
+        intensity={0.65}
+        color="#b11226"
+      />
+      <Environment resolution={props.lowPower ? 64 : 128} frames={1}>
+        <color attach="background" args={["#08090c"]} />
+        <Lightformer
+          form="rect"
+          intensity={4}
+          color="#f4f1e9"
+          position={[-3, 2, 3]}
+          scale={[1.1, 5, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={2.5}
+          color="#b6c1d7"
+          position={[4, 1, 1]}
+          scale={[0.55, 4, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={3}
+          color="#eee9df"
+          position={[0, 4, -1]}
+          scale={[3, 1, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={1.8}
+          color="#b11226"
+          position={[-2, -2, -3]}
+          scale={[1.4, 2.4, 1]}
+          target={[0, 0, 0]}
+        />
+        <Lightformer
+          form="rect"
+          intensity={1.4}
+          color="#c9c1b5"
+          position={[1, 0, -4]}
+          scale={[0.65, 4.5, 1]}
+          target={[0, 0, 0]}
+        />
+      </Environment>
+      <Crystal {...props} />
     </Canvas>
   );
 }
