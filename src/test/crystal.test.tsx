@@ -51,7 +51,7 @@ afterEach(() => {
 });
 
 async function renderCrystal() {
-  const result = render(<ScenePanel />);
+  const result = render(<ScenePanel immersive />);
   await screen.findByTestId("crystal-scene");
   const control = screen.getByRole("button", {
     name: "Hold to open the crystal",
@@ -200,7 +200,7 @@ describe("Interactive home crystal", () => {
 
   it("shows a faceted crystal fallback without WebGL or inactive controls", () => {
     vi.mocked(HTMLCanvasElement.prototype.getContext).mockReturnValue(null);
-    const { container } = render(<ScenePanel />);
+    const { container } = render(<ScenePanel immersive />);
     expect(
       screen.getByRole("group", { name: "Interactive faceted glass crystal" }),
     ).toBeTruthy();
@@ -213,5 +213,8 @@ describe("Interactive home crystal", () => {
       container.querySelectorAll("svg.static-structure path").length,
     ).toBeGreaterThan(10);
     expect(container.querySelector("svg.static-structure rect")).toBeNull();
+    expect(
+      container.querySelector("svg.immersive-fallback-atmosphere"),
+    ).toBeTruthy();
   });
 });

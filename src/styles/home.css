@@ -1,0 +1,551 @@
+/* Home-only art direction. Shared page content and the site palette stay intact. */
+.home-page {
+  --hero-gutter: max(56px, calc((100vw - 1280px) / 2));
+  overflow: clip;
+}
+.home-page .immersive-hero {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: max(790px, calc(100svh - 88px));
+  padding: 0;
+  background: #080808;
+}
+.home-page .immersive-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  border: 0;
+}
+.home-page .immersive-scene .scene-render {
+  position: absolute;
+  inset: 0;
+}
+.home-page .hero-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, #080808dd 0%, #0808088a 38%, #08080800 67%),
+    linear-gradient(
+      0deg,
+      #080808 0%,
+      #08080800 24%,
+      #08080800 82%,
+      #0808088c 100%
+    );
+}
+.home-page .hero-shell {
+  position: relative;
+  z-index: 2;
+  min-height: inherit;
+  display: flex;
+  flex-direction: column;
+  padding-top: 34px;
+  pointer-events: none;
+}
+.home-page .hero-topline {
+  gap: 20px;
+  color: #c5bbaa;
+}
+.home-page .hero-topline .eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+}
+.home-page .hero-location {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+}
+.home-page .hero-copy {
+  width: min(760px, 67%);
+  margin: clamp(68px, 10.5vh, 128px) 0 100px;
+}
+.home-page .hero-copy h1 {
+  width: fit-content;
+  max-width: 100%;
+  font-size: clamp(76px, 8.5vw, 136px);
+  line-height: 0.96;
+  font-weight: 400;
+  letter-spacing: -0.07em;
+  color: #e8ddc7;
+  text-shadow: 0 5px 40px #0808089c;
+}
+.home-page .hero-copy h1,
+.home-page .hero-role,
+.home-page .hero-description,
+.home-page .hero-actions,
+.home-page .hero-socials,
+.home-page .portrait-note,
+.home-page .hero-bottom a {
+  pointer-events: auto;
+}
+.home-page .hero-role {
+  width: fit-content;
+  max-width: 100%;
+  margin: 27px 0 17px;
+  font-size: clamp(18px, 1.6vw, 23px);
+  line-height: 1.5;
+}
+.home-page .hero-role .serif {
+  color: #e8ddc7;
+}
+.home-page .hero-description {
+  max-width: 455px;
+  color: #b8b1a6;
+  font-size: 15px;
+  line-height: 1.85;
+  margin-bottom: 26px;
+}
+.home-page .hero-actions {
+  width: fit-content;
+}
+.home-page .hero-actions .button-outline {
+  background: #08080845;
+  border-color: #86745b;
+}
+.home-page .hero-actions .button-outline:hover {
+  background: #b11226;
+  border-color: #b11226;
+}
+.home-page .hero-socials {
+  width: fit-content;
+  font-size: 11px;
+  gap: 25px;
+  margin-top: 25px;
+}
+.home-page .portrait-note {
+  position: absolute;
+  right: 0;
+  bottom: 112px;
+  width: 282px;
+  margin: 0;
+  padding-top: 16px;
+  border-color: #75604b6e;
+}
+.home-page .portrait-note img {
+  width: 44px;
+  height: 54px;
+}
+.home-page .portrait-note span {
+  font-size: 10px;
+}
+.home-page .hero-bottom {
+  margin-top: auto;
+  min-height: 62px;
+  padding-block: 24px;
+  border-color: #75604b45;
+  font-size: 9px;
+}
+.home-page .hero-bottom-index {
+  display: inline-flex !important;
+}
+.home-page .immersive-scene .scene-caption {
+  top: 112px;
+  left: auto;
+  right: var(--hero-gutter);
+  width: 270px;
+  opacity: 0.8;
+  font-size: 8px;
+}
+.home-page .immersive-scene .crystal-control {
+  inset: 65px 0 76px;
+  z-index: 1;
+  outline-offset: -12px;
+  touch-action: pan-y pinch-zoom;
+}
+.home-page .immersive-scene .scene-bottom {
+  left: auto;
+  right: calc(26% - 114px);
+  bottom: 82px;
+  width: 228px;
+  z-index: 3;
+}
+.home-page .immersive-scene .crystal-instruction {
+  font-size: 9px;
+  color: #d2c4ad;
+}
+.home-page .immersive-scene .crystal-pause {
+  width: 36px;
+  height: 36px;
+}
+.home-page .immersive-scene .static-structure {
+  position: absolute;
+  top: 9%;
+  right: 2%;
+  width: 48%;
+  height: 69%;
+  padding: 30px;
+}
+.home-page .immersive-fallback-atmosphere {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+}
+.home-page #selected-work {
+  padding-block: clamp(80px, 8vw, 128px);
+}
+.home-page #selected-work .section-heading {
+  margin-bottom: 66px;
+}
+.home-page .featured-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 74px;
+}
+.home-page .featured-project {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  align-items: center;
+  gap: 70px;
+}
+.home-page .featured-grid > div + div {
+  padding-top: 74px;
+  border-top: 1px solid #8b7b5f55;
+}
+.home-page .featured-grid > div:nth-child(even) .project-image-link {
+  order: 2;
+}
+.home-page .featured-grid > div:nth-child(even) .featured-project {
+  grid-template-columns: 1fr 1.3fr;
+}
+.home-page .project-image-link {
+  perspective: 1200px;
+}
+.home-page .featured-project .project-visual {
+  height: 385px;
+  padding: 61px 34px 0;
+  transition: transform 0.7s cubic-bezier(0.2, 0.65, 0.2, 1);
+}
+.home-page .project-image-link:hover .project-visual,
+.home-page .project-image-link:focus-visible .project-visual {
+  transform: rotateY(-3deg) rotateX(2deg) translateY(-5px);
+}
+.home-page
+  .featured-grid
+  > div:nth-child(even)
+  .project-image-link:hover
+  .project-visual {
+  transform: rotateY(3deg) rotateX(2deg) translateY(-5px);
+}
+.home-page .featured-project .video-window,
+.home-page .featured-project .blog-window {
+  height: 280px;
+}
+.home-page .featured-project .video-screen {
+  height: 150px;
+}
+.home-page .featured-project .video-thumbs div {
+  height: 52px;
+}
+.home-page .featured-project .blog-preview-content {
+  padding: 22px 26px;
+}
+.home-page .featured-project .blog-preview-content h3 {
+  font-size: 38px;
+}
+.home-page .featured-project .blog-art {
+  height: 75px;
+}
+.home-page .featured-project .project-summary {
+  padding: 0;
+  grid-template-columns: 24px 1fr;
+  gap: 18px;
+}
+.home-page .featured-project .project-title {
+  font-size: clamp(35px, 3.2vw, 49px);
+  margin-block: 13px 17px;
+}
+.home-page .featured-project .project-summary p:not(.eyebrow) {
+  font-size: 15px;
+  line-height: 1.9;
+}
+.home-page .featured-project .project-tags {
+  margin-top: 25px;
+}
+.home-page .intro-section {
+  padding-block: 125px;
+}
+.home-page .intro-grid {
+  gap: 110px;
+}
+.home-page .focus-row {
+  padding-block: 25px;
+}
+.home-page .tech-section {
+  padding-block: 110px 125px;
+}
+.home-page .tech-grid {
+  border-top: 1px solid #3a342b;
+}
+.home-page .tech-column {
+  border-top: 0;
+  padding-block: 32px;
+}
+.home-page .contact-banner {
+  padding-block: 88px;
+}
+
+@media (min-width: 1800px) {
+  .home-page .hero-copy {
+    margin-top: 135px;
+  }
+}
+@media (min-width: 768px) and (max-width: 1050px) {
+  .home-page {
+    --hero-gutter: 36px;
+  }
+  .home-page .hero-copy {
+    width: 70%;
+  }
+  .home-page .hero-copy h1 {
+    font-size: 8.8vw;
+  }
+  .home-page .hero-description {
+    max-width: 410px;
+  }
+  .home-page .portrait-note {
+    width: 235px;
+  }
+  .home-page .hero-bottom {
+    font-size: 8px;
+    gap: 12px;
+  }
+  .home-page .hero-bottom > span {
+    gap: 8px;
+  }
+  .home-page .featured-project,
+  .home-page .featured-grid > div:nth-child(even) .featured-project {
+    gap: 35px;
+    grid-template-columns: 1.15fr 1fr;
+  }
+  .home-page .featured-project .project-visual {
+    height: 315px;
+    padding-inline: 24px;
+  }
+  .home-page .featured-project .video-window,
+  .home-page .featured-project .blog-window {
+    height: 220px;
+  }
+  .home-page .featured-project .video-screen {
+    height: 107px;
+  }
+  .home-page .featured-project .blog-preview-content h3 {
+    font-size: 29px;
+  }
+  .home-page .intro-grid {
+    gap: 50px;
+  }
+}
+@media (max-width: 767px) {
+  .home-page {
+    --hero-gutter: 20px;
+  }
+  .home-page .immersive-hero {
+    min-height: auto;
+  }
+  .home-page .hero-shell {
+    padding-top: 24px;
+  }
+  .home-page .hero-topline {
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .home-page .hero-topline .eyebrow {
+    font-size: 7px;
+    gap: 7px;
+    letter-spacing: 0.08em;
+  }
+  .home-page .hero-location {
+    font-size: 7px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .home-page .hero-copy {
+    width: 100%;
+    margin: 447px 0 0;
+  }
+  .home-page .hero-copy h1 {
+    font-size: clamp(44px, 12.4vw, 86px);
+    letter-spacing: -0.065em;
+  }
+  .home-page .hero-role {
+    margin-block: 21px 16px;
+    font-size: 20px;
+  }
+  .home-page .hero-description {
+    font-size: 15px;
+    max-width: 470px;
+  }
+  .home-page .hero-socials {
+    margin-top: 23px;
+    gap: 24px;
+  }
+  .home-page .hero-shade {
+    background: linear-gradient(
+      0deg,
+      #080808 0%,
+      #080808d9 30%,
+      #080808bb 59%,
+      #08080800 75%,
+      #08080800 100%
+    );
+  }
+  .home-page .immersive-scene .scene-caption {
+    top: 67px;
+    left: 20px;
+    right: 20px;
+    width: auto;
+    font-size: 7px;
+  }
+  .home-page .immersive-scene .scene-caption span:last-child {
+    display: inline;
+  }
+  .home-page .immersive-scene .crystal-control {
+    top: 90px;
+    bottom: auto;
+    height: 330px;
+  }
+  .home-page .immersive-scene .scene-bottom {
+    top: 437px;
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    width: 195px;
+    transform: translateX(-50%);
+  }
+  .home-page .immersive-scene .crystal-instruction {
+    font-size: 8px;
+  }
+  .home-page .immersive-scene .static-structure {
+    top: 121px;
+    left: 50%;
+    right: auto;
+    width: 238px;
+    height: 248px;
+    padding: 0;
+    transform: translateX(-50%);
+  }
+  .home-page .immersive-fallback-atmosphere {
+    width: 622px;
+    height: 414px;
+    left: calc(50% - 451px);
+    top: 48px;
+  }
+  .home-page .portrait-note {
+    position: static;
+    width: min(320px, 100%);
+    flex-wrap: nowrap;
+    margin: 34px 0;
+    border-top: 1px solid #75604b6e;
+    padding-top: 18px;
+    gap: 14px;
+  }
+  .home-page .portrait-note span {
+    width: auto;
+    font-size: 10px;
+  }
+  .home-page .portrait-note > svg {
+    display: block;
+  }
+  .home-page .hero-bottom {
+    flex-wrap: wrap;
+    gap: 17px 12px;
+    padding-block: 21px 25px;
+    font-size: 7px;
+  }
+  .home-page .hero-bottom > span {
+    display: inline-flex;
+  }
+  .home-page .hero-bottom > span:not(.hero-bottom-index) {
+    order: 3;
+    width: 100%;
+    gap: 10px;
+    font-size: 7px;
+  }
+  .home-page .hero-bottom-index {
+    margin-left: auto;
+  }
+  .home-page #selected-work {
+    padding-block: 65px;
+  }
+  .home-page #selected-work .section-heading {
+    margin-bottom: 34px;
+  }
+  .home-page .featured-grid {
+    gap: 40px;
+  }
+  .home-page .featured-project,
+  .home-page .featured-grid > div:nth-child(even) .featured-project {
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+  .home-page .featured-grid > div:nth-child(even) .project-image-link {
+    order: 0;
+  }
+  .home-page .featured-grid > div + div {
+    padding-top: 40px;
+  }
+  .home-page .featured-project .project-visual {
+    height: 310px;
+    padding: 55px 24px 0;
+  }
+  .home-page .featured-project .video-window,
+  .home-page .featured-project .blog-window {
+    height: 220px;
+  }
+  .home-page .featured-project .video-screen {
+    height: 106px;
+  }
+  .home-page .featured-project .blog-preview-content {
+    padding: 18px 22px;
+  }
+  .home-page .featured-project .blog-preview-content h3 {
+    font-size: 29px;
+  }
+  .home-page .featured-project .project-summary {
+    grid-template-columns: 23px 1fr;
+    gap: 12px;
+  }
+  .home-page .featured-project .project-title {
+    font-size: 34px;
+    margin-block: 9px 12px;
+  }
+  .home-page .featured-project .project-summary p:not(.eyebrow) {
+    font-size: 14px;
+  }
+  .home-page .intro-section,
+  .home-page .tech-section {
+    padding-block: 70px;
+  }
+  .home-page .intro-grid {
+    gap: 36px;
+  }
+  .home-page .focus-row {
+    padding-block: 21px;
+  }
+  .home-page .tech-column {
+    padding-block: 26px;
+  }
+  .home-page .tech-column:nth-child(n + 3) {
+    border-top: 1px solid #3a342b;
+  }
+  .home-page .contact-banner {
+    padding-block: 58px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-page .project-image-link:hover .project-visual,
+  .home-page .project-image-link:focus-visible .project-visual,
+  .home-page
+    .featured-grid
+    > div:nth-child(even)
+    .project-image-link:hover
+    .project-visual {
+    transform: none;
+  }
+}

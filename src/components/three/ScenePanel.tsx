@@ -51,8 +51,48 @@ function StaticCrystal() {
   );
 }
 
+function StaticScene({ immersive = false }: { immersive?: boolean }) {
+  return (
+    <>
+      {immersive && (
+        <svg
+          className="immersive-fallback-atmosphere"
+          viewBox="0 0 1200 800"
+          aria-hidden="true"
+        >
+          {[0, 1, 2].map((strand) => (
+            <g
+              key={strand}
+              fill={strand === 1 ? "#e8ddc7" : "#b11226"}
+              opacity={strand === 1 ? 0.35 : 0.6}
+            >
+              {Array.from({ length: 170 }, (_, i) => {
+                const angle = (i / 170) * Math.PI * 2;
+                const width = Math.sin(i * 2.17) * 11;
+                return (
+                  <circle
+                    key={i}
+                    cx={870 + Math.cos(angle) * (245 + strand * 48 + width)}
+                    cy={
+                      380 +
+                      Math.sin(angle) * 110 +
+                      Math.sin(angle * 2 + strand) * 58
+                    }
+                    r={i % 5 === 0 ? 1.5 : 0.8}
+                  />
+                );
+              })}
+            </g>
+          ))}
+        </svg>
+      )}
+      <StaticCrystal />
+    </>
+  );
+}
+
 class SceneBoundary extends Component<
-  { children: ReactNode; onUnavailable: () => void },
+  { children: ReactNode; onUnavailable: () => void; immersive?: boolean },
   { failed: boolean }
 > {
   state = { failed: false };
@@ -63,13 +103,17 @@ class SceneBoundary extends Component<
     this.props.onUnavailable();
   }
   render() {
-    return this.state.failed ? <StaticCrystal /> : this.props.children;
+    return this.state.failed ? (
+      <StaticScene immersive={this.props.immersive} />
+    ) : (
+      this.props.children
+    );
   }
 }
 
-export function ScenePanel() {
+export function ScenePanel({ immersive = false }: { immersive?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
-  const interaction = useRef<CrystalInput>({ x: 0, y: 0 });
+  const interaction = useRef<CrystalInput>({ x: 0, y: 0, scroll: 0 });
   const activePointer = useRef<number | null>(null);
   const visible = useInView(ref);
   const reduced = !!useReducedMotion();
@@ -117,6 +161,43 @@ export function ScenePanel() {
       activePointer.current = null;
     }
   }, [visible, paused]);
+
+  useEffect(() => {
+    if (!immersive) return;
+    const trackScroll = () => {
+      const bounds = ref.current?.getBoundingClientRect();
+      if (bounds?.height)
+        interaction.current.scroll = Math.max(
+          0,
+          Math.min(1, -bounds.top / bounds.height),
+        );
+    };
+    const trackPointer = (event: globalThis.PointerEvent) => {
+      const bounds = ref.current?.getBoundingClientRect();
+      if (
+        !bounds?.width ||
+        !bounds.height ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom
+      )
+        return;
+      interaction.current.x = Math.max(
+        -1,
+        Math.min(1, ((event.clientX - bounds.left) / bounds.width) * 2 - 1),
+      );
+      interaction.current.y = Math.max(
+        -1,
+        Math.min(1, 1 - ((event.clientY - bounds.top) / bounds.height) * 2),
+      );
+    };
+    trackScroll();
+    window.addEventListener("scroll", trackScroll, { passive: true });
+    window.addEventListener("pointermove", trackPointer, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", trackScroll);
+      window.removeEventListener("pointermove", trackPointer);
+    };
+  }, [immersive]);
 
   function move(event: PointerEvent<HTMLButtonElement>) {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -170,7 +251,7 @@ export function ScenePanel() {
 
   return (
     <div
-      className={`scene-panel crystal-panel${held ? " is-held" : ""}`}
+      className={`scene-panel crystal-panel${immersive ? " immersive-scene" : ""}${held ? " is-held" : ""}`}
       ref={ref}
       role="group"
       aria-label="Interactive faceted glass crystal"
@@ -180,9 +261,9 @@ export function ScenePanel() {
         <span>AN INTERACTIVE STUDY</span>
       </div>
       <div className="scene-render">
-        <SceneBoundary onUnavailable={unavailable}>
+        <SceneBoundary onUnavailable={unavailable} immersive={immersive}>
           {capable ? (
-            <Suspense fallback={<StaticCrystal />}>
+            <Suspense fallback={<StaticScene immersive={immersive} />}>
               <TechnicalScene
                 animated={visible && tabActive && !paused && !reduced}
                 held={held}
@@ -190,10 +271,11 @@ export function ScenePanel() {
                 lowPower={lowPower}
                 interaction={interaction}
                 onUnavailable={unavailable}
+                immersive={immersive}
               />
             </Suspense>
           ) : (
-            <StaticCrystal />
+            <StaticScene immersive={immersive} />
           )}
         </SceneBoundary>
       </div>
@@ -215,7 +297,7 @@ export function ScenePanel() {
           }}
           onPointerLeave={() => {
             if (activePointer.current === null)
-              interaction.current = { x: 0, y: 0 };
+              interaction.current = { ...interaction.current, x: 0, y: 0 };
           }}
           onKeyDown={keyDown}
           onKeyUp={keyUp}

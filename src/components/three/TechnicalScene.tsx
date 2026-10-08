@@ -4,8 +4,9 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Environment, Lightformer } from "@react-three/drei";
 import { DoubleSide, Group, MathUtils, MeshPhysicalMaterial } from "three";
 import { createCrystalGeometry } from "./crystalGeometry";
+import Atmosphere from "./Atmosphere";
 
-export type CrystalInput = { x: number; y: number };
+export type CrystalInput = { x: number; y: number; scroll?: number };
 type CrystalSceneProps = {
   animated: boolean;
   held: boolean;
@@ -13,6 +14,7 @@ type CrystalSceneProps = {
   lowPower: boolean;
   interaction: RefObject<CrystalInput>;
   onUnavailable: () => void;
+  immersive?: boolean;
 };
 
 const facetShader = /* glsl */ `
@@ -47,6 +49,7 @@ function Crystal({
   lowPower,
   interaction,
   onUnavailable,
+  immersive,
 }: CrystalSceneProps) {
   const sculpture = useRef<Group>(null);
   const time = useRef(0);
@@ -159,7 +162,7 @@ function Crystal({
     <group
       ref={sculpture}
       rotation={[-0.08, 0.35, 0]}
-      scale={Math.min(1, viewport.width / 3.05)}
+      scale={immersive ? 1 : Math.min(1, viewport.width / 3.05)}
     >
       <mesh
         geometry={geometry}
@@ -167,6 +170,52 @@ function Crystal({
         frustumCulled={false}
         dispose={null}
       />
+    </group>
+  );
+}
+
+function World(props: CrystalSceneProps) {
+  const { camera, viewport, size } = useThree();
+  const mobile = size.width < 768;
+  useFrame((_, delta) => {
+    if (!props.immersive || !props.animated || props.reducedMotion) return;
+    const step = Math.min(delta, 0.05);
+    const scroll = props.interaction.current.scroll ?? 0;
+    camera.position.z = MathUtils.damp(
+      camera.position.z,
+      6.3 + scroll * 1.25,
+      3,
+      step,
+    );
+    camera.position.y = MathUtils.damp(
+      camera.position.y,
+      0.13 + scroll * 0.32 + props.interaction.current.y * 0.04,
+      3,
+      step,
+    );
+    camera.position.x = MathUtils.damp(
+      camera.position.x,
+      props.interaction.current.x * 0.1,
+      3,
+      step,
+    );
+  });
+  if (!props.immersive) return <Crystal {...props} />;
+  const scale = mobile
+    ? ((Math.min(230, size.width * 0.8) / size.height) * viewport.height) / 2.75
+    : Math.min(0.84, viewport.width / 9);
+  const position: [number, number, number] = mobile
+    ? [0, viewport.height * (0.5 - 245 / size.height), 0]
+    : [viewport.width * 0.24, viewport.height * 0.035, 0];
+  return (
+    <group position={position} scale={scale}>
+      <Atmosphere
+        animated={props.animated}
+        lowPower={props.lowPower}
+        held={props.held}
+        reducedMotion={props.reducedMotion}
+      />
+      <Crystal {...props} />
     </group>
   );
 }
@@ -213,7 +262,7 @@ export default function TechnicalScene(props: CrystalSceneProps) {
         <Lightformer
           form="rect"
           intensity={2.5}
-          color="#b6c1d7"
+          color="#e8ddc7"
           position={[4, 1, 1]}
           scale={[0.55, 4, 1]}
           target={[0, 0, 0]}
@@ -243,7 +292,7 @@ export default function TechnicalScene(props: CrystalSceneProps) {
           target={[0, 0, 0]}
         />
       </Environment>
-      <Crystal {...props} />
+      <World {...props} />
     </Canvas>
   );
 }

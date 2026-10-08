@@ -7,17 +7,19 @@ import { Reveal } from "../ui/Reveal";
 
 export function Hero() {
   return (
-    <section className="hero container">
-      <div className="hero-topline">
-        <p className="eyebrow">
-          <span className="red-square" />
-          COMPUTER SCIENCE @ IIIT SONIPAT
-        </p>
-        <span className="hero-location">
-          SONEPAT, INDIA <span className="red-dot" />
-        </span>
-      </div>
-      <div className="hero-grid">
+    <section className="hero immersive-hero">
+      <ScenePanel immersive />
+      <div className="hero-shade" aria-hidden="true" />
+      <div className="container hero-shell">
+        <div className="hero-topline">
+          <p className="eyebrow">
+            <span className="red-square" />
+            COMPUTER SCIENCE @ IIIT SONIPAT
+          </p>
+          <span className="hero-location">
+            SONEPAT, INDIA <span className="red-dot" />
+          </span>
+        </div>
         <Reveal className="hero-copy">
           <h1>
             Prakhar
@@ -34,7 +36,7 @@ export function Hero() {
             Science at IIIT Sonipat, working with React, Node.js, Express and
             MongoDB.
           </p>
-          <div className="flex flex-wrap gap-3">
+          <div className="hero-actions flex flex-wrap gap-3">
             <ButtonLink to="/projects">View projects</ButtonLink>
             <ButtonLink to="/contact" secondary>
               Contact me
@@ -46,34 +48,31 @@ export function Hero() {
             <ExternalLink href={profile.resume}>Resume</ExternalLink>
           </div>
         </Reveal>
-        <Reveal className="hero-art" delay={0.15}>
-          <ScenePanel />
-          <Link className="portrait-note" to="/about">
-            <img
-              src="/prakhar-profile.jpg"
-              alt="Supplied hand-drawn portrait in a crimson kurta"
-              width="64"
-              height="76"
-            />
-            <span>
-              A little about
-              <br />
-              <strong>the person behind the code.</strong>
-            </span>
-            <ArrowUpRight size={17} />
-          </Link>
-        </Reveal>
-      </div>
-      <div className="hero-bottom">
-        <a href="#selected-work">
-          SCROLL TO EXPLORE <ArrowDown size={14} />
-        </a>
-        <span>
-          FRONTEND <i /> BACKEND <i /> EVERYTHING IN BETWEEN
-        </span>
-        <span className="hero-bottom-index">
-          PORTFOLIO / {new Date().getFullYear()}
-        </span>
+        <Link className="portrait-note" to="/about">
+          <img
+            src="/prakhar-profile.jpg"
+            alt="Supplied hand-drawn portrait in a crimson kurta"
+            width="64"
+            height="76"
+          />
+          <span>
+            A little about
+            <br />
+            <strong>the person behind the code.</strong>
+          </span>
+          <ArrowUpRight size={17} />
+        </Link>
+        <div className="hero-bottom">
+          <a href="#selected-work">
+            SCROLL TO EXPLORE <ArrowDown size={14} />
+          </a>
+          <span>
+            FRONTEND <i /> BACKEND <i /> EVERYTHING IN BETWEEN
+          </span>
+          <span className="hero-bottom-index">
+            PORTFOLIO / {new Date().getFullYear()}
+          </span>
+        </div>
       </div>
     </section>
   );

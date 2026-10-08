@@ -12,6 +12,7 @@ import { FeaturedProjects } from "../components/home/FeaturedProjects";
 import { TechStack } from "../components/home/TechStack";
 import { Reveal } from "../components/ui/Reveal";
 import { usePageMeta } from "../hooks/usePageMeta";
+import "../styles/home.css";
 
 const focus = [
   {
@@ -47,7 +48,7 @@ export default function Home() {
     "Prakhar Shrivastava, Computer Science student at IIIT Sonipat. Explore full-stack React, Node.js, Express and MongoDB projects.",
   );
   return (
-    <>
+    <div className="home-page">
       <Hero />
       <FeaturedProjects />
       <section className="section intro-section">
@@ -103,6 +104,6 @@ export default function Home() {
           <p>A project, an opportunity, or a conversation about development.</p>
         </div>
       </section>
-    </>
+    </div>
   );
 }
